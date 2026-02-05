@@ -25,6 +25,7 @@
 class AmfitrackNode
 {
 private:
+    const uint16_t kMaxDevNameSize = 53;
     uint8_t _tx_id;
     uint32_t _uuid[3];
     char *_dev_name;
