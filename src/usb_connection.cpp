@@ -369,9 +369,6 @@ hid_device *usb_connection::get_device_handle(uint8_t tx_id)
 
 void usb_connection::usb_init(void)
 {
-    // TODO(pkyle): Initialize hid_api
-    // TODO(pkyle): initialize monitor thread.
-    // TODO(pkyle): return bool instead of void to signal initialization failure!
     /* Tries to connect to source */
     this->usb_connect_device(VID, PID_Source);
     /* Tries to connect to sensor */
@@ -395,16 +392,8 @@ void usb_connection::usb_run(void)
 
     if (difftime(CurrentTime, this->CheckForDevice_Timer) >= 2.0)
     {
-        // TODO(pkyle): Remove this and update with a event based connection handler.
-        //  Calling hid_init(), and hid_enumerate is not appropriate, we should only connect or
-        //  disconnect from a usb device if we detect that its been 'plugged in' or 'unplugged'
-        //  as this is currently written RAM usage experiences unbounded growth. Each call to
-        //  'usb_connect_device()' adds to the heap memory used (verified by monitoring 'watch'
-        //  command). I believe at this point, given a long period of time, this program could crash
-        //  the host machine by using all of its ram. In  resource constrained environments, this
-        //  would obviously happen a lot faster. For now, our team gets around this by ONLY calling
-        //  amfitrack_main_loop() when we ACTIVELY want to track, otherwise we aren't calling this
-        //  method to preserve our RAM. I'm working on a fix for this.
+        // TODO(pkyle): I think it would be a good idea to consider using an event-based workflow to
+        //  manage usb connections. Right now, every two seconds, this is being run.
         /* Tries to connect to source */
         this->usb_connect_device(VID, PID_Source);
         /* Tries to connect to sensor */
@@ -421,7 +410,6 @@ void usb_connection::usb_run(void)
         hid_device *dev_handle = this->get_device_handle(tx_id);
         if (dev_handle)
         {
-            // TODO(pkyle): this value is never used...
             transfer_length = this->write_blocking(dev_handle, TransmitData, QueueDataLength);
             _amfiprot_api.set_transmit_ongoing_and_check_respons_request(QueueIdx);
 #ifdef USB_CONNECTION_DEBUG_INFO
