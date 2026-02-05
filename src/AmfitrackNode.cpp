@@ -64,11 +64,15 @@ AmfitrackNode::AmfitrackNode(const AmfitrackNode& node) : _tx_id(node.getTxID())
 
 AmfitrackNode::~AmfitrackNode()
 {
-
+  delete[] _dev_name;
 }
 
 AmfitrackNode& AmfitrackNode::operator=(const AmfitrackNode& rhs)
 {
+    if (this == &rhs) return *this;
+    delete[] _dev_name;
+    _dev_name = new char[53];
+    strcpy(_dev_name, rhs.getDevName());
     _tx_id = rhs.getTxID();
     uint32_t *uuid = rhs.getUUID();
     _uuid[0] = uuid[0];
