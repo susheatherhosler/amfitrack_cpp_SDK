@@ -68,17 +68,6 @@ usb_connection::usb_connection()
 {
     this->_usb_report_id = 0x01;
     int err = 0;
-
-    #ifdef USE_HID
-    // TODO(pkyle): Because initialization CAN fail, we shouldn't do it here, additionally their
-    //  'assert()' isn't being run in release so their og solution wasn't appropriate. for now, to
-    //  stop the memory leaks i'm doing this here
-    err = hid_init();
-    #else
-    err = libusb_init(&_ctx);
-    #endif
-
-    assert(err == 0);
 }
 
 usb_connection::~usb_connection()
@@ -100,18 +89,9 @@ usb_connection::~usb_connection()
 }
 
 bool usb_connection::usb_connect_device(uint16_t vid, uint16_t pid) {
-  // TODO(pkyle): this should not be called repeatedly. It should only be called when the USB hub
-  //  is detected... doing this over and over gain causes an steady/continous increase in RAM usage.
-  int err = 0;
 #ifdef USE_HID
-  err = hid_init();
-#else
-  err = libusb_init(&_ctx);
-#endif
-
-  assert(err == 0);
-
-#ifdef USE_HID
+  // not necessary to call hid_init() lets let hid_api handle that. (its called automatically in
+  // hid_enumerate() if necessary)
   struct hid_device_info* devs = hid_enumerate(vid, pid);
 
   if (!devs) {
