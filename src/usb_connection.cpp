@@ -67,11 +67,29 @@ void libAmfiProt_handle_ReplyDeviceName(void *handle, lib_AmfiProt_Frame_t *fram
 usb_connection::usb_connection()
 {
     this->_usb_report_id = 0x01;
+    int err = 0;
+
+    #ifdef USE_HID
+    // TODO(pkyle): Because initialization CAN fail, we shouldn't do it here, additionally their
+    //  'assert()' isn't being run in release so their og solution wasn't appropriate. for now, to
+    //  stop the memory leaks i'm doing this here
+    err = hid_init();
+    #else
+    err = libusb_init(&_ctx);
+    #endif
+
+    assert(err == 0);
 }
 
 usb_connection::~usb_connection()
 {
     #ifdef USE_HID
+    // shutdown any nodes otherwise we leak memory
+    for (const auto& node : _nodes) {
+       if (hid_device *dev_handle = node->getDeviceHandle()) {
+           hid_close(dev_handle);
+       }
+    }
     hid_close(_DeviceHandle);
     hid_exit();
     #else
@@ -81,86 +99,80 @@ usb_connection::~usb_connection()
     #endif
 }
 
-bool usb_connection::usb_connect_device(uint16_t vid, uint16_t pid)
-{
-    int err = 0;
-    #ifdef USE_HID
-    err = hid_init();
-    #else
-    err = libusb_init(&_ctx);
-    #endif
-
-    assert(err == 0);
-
-    #ifdef USE_HID
-    struct hid_device_info *devs = hid_enumerate(vid, pid);
-
-	if (!devs)
-	{
-#ifdef usb_connection_DEBUG_INFO
-		std::cout << "Could not find any devices matching VID: " << std::hex << vid << " and PID: " << std::hex << pid << std::endl;
+bool usb_connection::usb_connect_device(uint16_t vid, uint16_t pid) {
+  // TODO(pkyle): this should not be called repeatedly. It should only be called when the USB hub
+  //  is detected... doing this over and over gain causes an steady/continous increase in RAM usage.
+  int err = 0;
+#ifdef USE_HID
+  err = hid_init();
+#else
+  err = libusb_init(&_ctx);
 #endif
-	}
-	else
-	{
-		hid_device_info *dev;
-		hid_device* dev_handle;
-        dev = &devs[0];
-		do {
-            bool DeviceAlreadyActive = false;
-			dev_handle = hid_open_path(dev->path);
-            for (auto& node : _nodes)
-            {
-                hid_device_info *dev_handleCurrent = hid_get_device_info(node->getDeviceHandle());
-                int compareResult = wcscmp(dev_handleCurrent->serial_number, dev->serial_number);
-                if (compareResult == 0) 
-                {
-                    DeviceAlreadyActive = true;
-                }
-            }
-			if (!dev_handle)
-			{
-				std::cout << "Unable to open device" << std::endl;
-			}
-			else
-			{
-                if (!DeviceAlreadyActive)
-                {
-                    std::shared_ptr<AmfitrackNode> node(new AmfitrackNode(dev_handle));
-                    _nodes.push_back(node);
-                    //_DeviceHandles.push_back(dev_handle);
-                }
 
-			}
-			dev = dev->next;
-		} while (dev);
-	}
-	
-	hid_free_enumeration(devs);
-	if (!(_nodes.size()))
-	{
-		std::cout << "Unable to access any devices with VID: " << std::hex << vid << " and PID: " << std::hex << pid << std::endl;
-	}
-    #else
-    _DeviceHandle = libusb_open_device_with_vid_pid(_ctx, _vid, _pid);
-    
-    if (libusb_kernel_driver_active(_DeviceHandle, 0) == 1)
-    {
-        libusb_detach_kernel_driver(_DeviceHandle, 0);
-    }
-    libusb_claim_interface(_DeviceHandle, 0);
-    #endif
-    return err;
+  assert(err == 0);
+
+#ifdef USE_HID
+  struct hid_device_info* devs = hid_enumerate(vid, pid);
+
+  if (!devs) {
+#ifdef usb_connection_DEBUG_INFO
+    std::cout << "Could not find any devices matching VID: " << std::hex << vid
+              << " and PID: " << std::hex << pid << std::endl;
+#endif
+  }
+  else {
+    const hid_device_info* dev = &devs[0];
+    do {
+      bool DeviceAlreadyActive = false;
+      hid_device* dev_handle = hid_open_path(dev->path);
+      for (const auto& node : _nodes) {
+        const hid_device_info* dev_handleCurrent = hid_get_device_info(node->getDeviceHandle());
+        const int compareResult = wcscmp(dev_handleCurrent->serial_number, dev->serial_number);
+        if (compareResult == 0) {
+          DeviceAlreadyActive = true;
+        }
+      }
+      if (!dev_handle) {
+        std::cout << "Unable to open device" << std::endl;
+      }
+      else {
+        if (!DeviceAlreadyActive) {
+          std::shared_ptr<AmfitrackNode> node(new AmfitrackNode(dev_handle));
+          _nodes.push_back(node);
+        }
+        else {
+          // If we're not going to use this object, we have to close it, or we leak memory!
+          hid_close(dev_handle);
+        }
+      }
+      dev = dev->next;
+    } while (dev);
+  }
+
+  hid_free_enumeration(devs);
+  if (!(_nodes.size())) {
+    std::cout << "Unable to access any devices with VID: " << std::hex << vid
+              << " and PID: " << std::hex << pid << std::endl;
+  }
+#else
+  _DeviceHandle = libusb_open_device_with_vid_pid(_ctx, _vid, _pid);
+
+  if (libusb_kernel_driver_active(_DeviceHandle, 0) == 1) {
+    libusb_detach_kernel_driver(_DeviceHandle, 0);
+  }
+  libusb_claim_interface(_DeviceHandle, 0);
+#endif
+  return true;
 }
 
 bool usb_connection::usb_disconnect_device(uint16_t vid, uint16_t pid)
 {
     #ifdef USE_HID
-	for (auto node : _nodes)
-	{
-		hid_close(node->getDeviceHandle());
-	}
-    hid_exit();
+    for (const auto& node : _nodes) {
+       if (hid_device *dev_handle = node->getDeviceHandle()) {
+           hid_close(dev_handle);
+       }
+    }
     #else
     libusb_release_interface(_DeviceHandle, 0);
     libusb_close(_DeviceHandle);
@@ -377,6 +389,9 @@ hid_device *usb_connection::get_device_handle(uint8_t tx_id)
 
 void usb_connection::usb_init(void)
 {
+    // TODO(pkyle): Initialize hid_api
+    // TODO(pkyle): initialize monitor thread.
+    // TODO(pkyle): return bool instead of void to signal initialization failure!
     /* Tries to connect to source */
     this->usb_connect_device(VID, PID_Source);
     /* Tries to connect to sensor */
@@ -400,6 +415,16 @@ void usb_connection::usb_run(void)
 
     if (difftime(CurrentTime, this->CheckForDevice_Timer) >= 2.0)
     {
+        // TODO(pkyle): Remove this and update with a event based connection handler.
+        //  Calling hid_init(), and hid_enumerate is not appropriate, we should only connect or
+        //  disconnect from a usb device if we detect that its been 'plugged in' or 'unplugged'
+        //  as this is currently written RAM usage experiences unbounded growth. Each call to
+        //  'usb_connect_device()' adds to the heap memory used (verified by monitoring 'watch'
+        //  command). I believe at this point, given a long period of time, this program could crash
+        //  the host machine by using all of its ram. In  resource constrained environments, this
+        //  would obviously happen a lot faster. For now, our team gets around this by ONLY calling
+        //  amfitrack_main_loop() when we ACTIVELY want to track, otherwise we aren't calling this
+        //  method to preserve our RAM. I'm working on a fix for this.
         /* Tries to connect to source */
         this->usb_connect_device(VID, PID_Source);
         /* Tries to connect to sensor */
@@ -416,6 +441,7 @@ void usb_connection::usb_run(void)
         hid_device *dev_handle = this->get_device_handle(tx_id);
         if (dev_handle)
         {
+            // TODO(pkyle): this value is never used...
             transfer_length = this->write_blocking(dev_handle, TransmitData, QueueDataLength);
             _amfiprot_api.set_transmit_ongoing_and_check_respons_request(QueueIdx);
 #ifdef USB_CONNECTION_DEBUG_INFO
