@@ -81,6 +81,11 @@ private:
     time_t CheckForDevice_Timer;
 
 public:
+    usb_connection& operator=(usb_connection const&) = delete;
+    usb_connection(usb_connection const&) = delete;
+    usb_connection& operator=(usb_connection&&) = delete;
+    usb_connection(usb_connection&&) = delete;
+
     static usb_connection& getInstance()
     {
         static usb_connection instance;

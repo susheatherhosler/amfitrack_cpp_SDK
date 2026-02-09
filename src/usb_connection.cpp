@@ -90,10 +90,20 @@ usb_connection::~usb_connection()
     #endif
 }
 
-bool usb_connection::usb_connect_device(uint16_t vid, uint16_t pid) {
+bool usb_connection::usb_connect_device(uint16_t vid, uint16_t pid)
+{
+  int err = 0;
 #ifdef USE_HID
-  // not necessary to call hid_init() lets let hid_api handle that. (its called automatically in
-  // hid_enumerate() if necessary)
+  // TODO(pkyle): calling hid_init() over and over again is not ideal, right now its essentially
+  //  called every 2 seconds, if calling amfitrack_main_loop() repeatedly. Additionally your
+  //  assert() is only called when compiled in Debug. This allows initialization to fail in Release.
+  err = hid_init();
+#else
+  err = libusb_init(&_ctx);
+#endif
+  assert(err == 0);
+
+#ifdef USE_HID
   struct hid_device_info* devs = hid_enumerate(vid, pid);
 
   if (!devs) {

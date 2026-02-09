@@ -55,6 +55,10 @@ public:
 	/* Call first to initialize USB and connect to devices */
 	void initialize_amfitrack();
 
+  // TODO(pkyle): Using 'start_amfitrack_task' workflow causes data races when calling
+  //  getDevicePose, getSensorMeasurement(), etc... For now our team is NOT using this workflow
+  //  because we believe it is dangerous. Instead, we 'manually' call 'amfitrack_main_loop()' then
+  //  'getDevicePose()' in series.
 	/* Starts the main thread, that reads data from all connected devices */
 	void start_amfitrack_task(void);
 
