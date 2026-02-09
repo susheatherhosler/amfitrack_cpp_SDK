@@ -77,8 +77,10 @@ usb_connection::~usb_connection()
     for (const auto& node : _nodes) {
        if (hid_device *dev_handle = node->getDeviceHandle()) {
            hid_close(dev_handle);
+           dev_handle = nullptr;
        }
     }
+    _nodes.clear();
     hid_close(_DeviceHandle);
     hid_exit();
     #else
@@ -151,8 +153,10 @@ bool usb_connection::usb_disconnect_device(uint16_t vid, uint16_t pid)
     for (const auto& node : _nodes) {
        if (hid_device *dev_handle = node->getDeviceHandle()) {
            hid_close(dev_handle);
+           dev_handle = nullptr;
        }
     }
+    _nodes.clear();
     #else
     libusb_release_interface(_DeviceHandle, 0);
     libusb_close(_DeviceHandle);
