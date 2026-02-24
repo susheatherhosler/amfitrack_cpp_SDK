@@ -223,6 +223,23 @@ void AMFITRACK::getDevicePose(uint8_t DeviceID, lib_AmfiProt_Amfitrack_Pose_t* P
     memcpy(Pose, &Position[DeviceID], sizeof(lib_AmfiProt_Amfitrack_Pose_t));
 }
 
+void AMFITRACK::setDeviceIMU(uint8_t DeviceID, lib_AmfiProt_Amfitrack_IMU_t imuData)
+{
+	#ifdef USE_THREAD_BASED
+	const std::lock_guard<std::mutex> lock(mutIMU);
+	#endif // USE_THREAD_BASED
+    memcpy(&IMUData[DeviceID], &imuData, sizeof(lib_AmfiProt_Amfitrack_IMU_t));
+}
+
+void AMFITRACK::getDeviceIMU(uint8_t DeviceID, lib_AmfiProt_Amfitrack_IMU_t* imuData)
+{
+    if (!getDeviceActive(DeviceID)) return;
+	#ifdef USE_THREAD_BASED
+	const std::lock_guard<std::mutex> lock(mutSensorMeasurements);
+	#endif // USE_THREAD_BASED
+    memcpy(imuData, &IMUData[DeviceID], sizeof(lib_AmfiProt_Amfitrack_IMU_t));
+}
+
 void AMFITRACK::setSensorMeasurements(uint8_t DeviceID, lib_AmfiProt_Amfitrack_Sensor_Measurement_t SensorMeasurement)
 {
 	#ifdef USE_THREAD_BASED
@@ -260,6 +277,9 @@ void AmfiProt_API::lib_AmfiProt_Amfitrack_handle_SensorMeasurement(void* handle,
     lib_AmfiProt_Amfitrack_Pose_t tempPose;
     lib_AmfiProt_Amfitrack_decode_pose_i24(&SensorMeasurement.pose, &tempPose);
     AMFITRACK.setDevicePose(frame->header.source, tempPose);
+    lib_AmfiProt_Amfitrack_IMU_t tempIMU;
+    lib_AmfiProt_Amfitrack_decodeIMU_i16(&SensorMeasurement.imu_data, &tempIMU);
+    AMFITRACK.setDeviceIMU(frame->header.source, tempIMU);
     AMFITRACK.setSensorMeasurements(frame->header.source, SensorMeasurement);
     AMFITRACK.setDeviceActive(frame->header.source);
 }
