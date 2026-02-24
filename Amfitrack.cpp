@@ -136,6 +136,9 @@ void AMFITRACK::setDeviceName(uint8_t DeviceID, char* name, uint8_t length)
 {
     // Check for valid device ID and name length
     if (length >= MAX_NAME_LENGTH) return;
+#ifdef USE_THREAD_BASED
+	const std::lock_guard<std::mutex> lock(mutName);
+#endif // USE_THREAD_BASED
     for (uint8_t i = 0; i < length; i++)
     {
         Name[DeviceID][i] = name[i];
@@ -166,6 +169,9 @@ void AMFITRACK::checkDeviceDisconnected(uint8_t DeviceID)
 
     if (difftime(CurrentTime, DeviceLastTimeSeen[DeviceID]) > 5.0)
     {
+		#ifdef USE_THREAD_BASED
+		const std::lock_guard<std::mutex> lock(mutDeviceActive);
+		#endif // USE_THREAD_BASED
         DeviceActive[DeviceID] = false;
         std::cout << "Device " << std::dec << static_cast<unsigned>(DeviceID) << " disconnected" << std::endl;
     }
@@ -175,6 +181,9 @@ void AMFITRACK::checkDeviceDisconnected(uint8_t DeviceID)
 void AMFITRACK::setDeviceActive(uint8_t DeviceID)
 {
 #ifdef USE_ACTIVE_DEVICE_HANDLING
+	#ifdef USE_THREAD_BASED
+	const std::lock_guard<std::mutex> lock(mutDeviceActive);
+	#endif // USE_THREAD_BASED
     if (!DeviceActive[DeviceID]) std::cout << "Device " << std::dec << static_cast<unsigned>(DeviceID) << " connected" << std::endl;
     DeviceActive[DeviceID] = true;
     DeviceLastTimeSeen[DeviceID] = time(0);
@@ -186,11 +195,17 @@ void AMFITRACK::setDeviceActive(uint8_t DeviceID)
 
 bool AMFITRACK::getDeviceActive(uint8_t DeviceID)
 {
+	#ifdef USE_THREAD_BASED
+	const std::lock_guard<std::mutex> lock(mutDeviceActive);
+	#endif // USE_THREAD_BASED
     return DeviceActive[DeviceID];
 }
 
 void AMFITRACK::setDevicePose(uint8_t DeviceID, lib_AmfiProt_Amfitrack_Pose_t Pose)
 {
+	#ifdef USE_THREAD_BASED
+	const std::lock_guard<std::mutex> lock(mutPosition);
+	#endif // USE_THREAD_BASED
     memcpy(&Position[DeviceID], &Pose, sizeof(lib_AmfiProt_Amfitrack_Pose_t));
 #ifdef AMFITRACK_DEBUG_INFO
     std::cout << "Pose set!" << std::endl;
@@ -202,17 +217,26 @@ void AMFITRACK::setDevicePose(uint8_t DeviceID, lib_AmfiProt_Amfitrack_Pose_t Po
 void AMFITRACK::getDevicePose(uint8_t DeviceID, lib_AmfiProt_Amfitrack_Pose_t* Pose)
 {
     if (!getDeviceActive(DeviceID)) return;
+	#ifdef USE_THREAD_BASED
+	const std::lock_guard<std::mutex> lock(mutPosition);
+	#endif // USE_THREAD_BASED
     memcpy(Pose, &Position[DeviceID], sizeof(lib_AmfiProt_Amfitrack_Pose_t));
 }
 
 void AMFITRACK::setSensorMeasurements(uint8_t DeviceID, lib_AmfiProt_Amfitrack_Sensor_Measurement_t SensorMeasurement)
 {
+	#ifdef USE_THREAD_BASED
+	const std::lock_guard<std::mutex> lock(mutSensorMeasurements);
+	#endif // USE_THREAD_BASED
     memcpy(&SensorMeasurements[DeviceID], &SensorMeasurement, sizeof(lib_AmfiProt_Amfitrack_Sensor_Measurement_t));
 }
 
 void AMFITRACK::getSensorMeasurements(uint8_t DeviceID, lib_AmfiProt_Amfitrack_Sensor_Measurement_t* SensorMeasurement)
 {
     if (!getDeviceActive(DeviceID)) return;
+	#ifdef USE_THREAD_BASED
+	const std::lock_guard<std::mutex> lock(mutSensorMeasurements);
+	#endif // USE_THREAD_BASED
     memcpy(SensorMeasurement, &SensorMeasurements[DeviceID], sizeof(lib_AmfiProt_Amfitrack_Sensor_Measurement_t));
 }
 
@@ -489,12 +513,18 @@ std::chrono::steady_clock::time_point getTimestampMicroseconds()
 
 void AMFITRACK::setSensorTimestamp(uint8_t DeviceID, std::chrono::steady_clock::time_point time_stamp)
 {
+#ifdef USE_THREAD_BASED
+	const std::lock_guard<std::mutex> lock(mutSensorTimestamps);
+#endif // USE_THREAD_BASED
     memcpy(&SensorTimestamps[DeviceID], &time_stamp, sizeof(std::chrono::steady_clock::time_point));
 }
 
 void AMFITRACK::getSensorTimestamp(uint8_t DeviceID, std::chrono::steady_clock::time_point* time_stamp)
 {
     if (!getDeviceActive(DeviceID)) return;
+#ifdef USE_THREAD_BASED
+	const std::lock_guard<std::mutex> lock(mutSensorTimestamps);
+#endif // USE_THREAD_BASED
     memcpy(time_stamp, &SensorTimestamps[DeviceID], sizeof(std::chrono::steady_clock::time_point));
 }
 
