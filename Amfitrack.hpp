@@ -117,7 +117,7 @@ private:
 	lib_AmfiProt_Amfitrack_Sensor_Measurement_t SensorMeasurements[MAX_NUMBER_OF_DEVICES];
 	
 	static void background_amfitrack_task(AMFITRACK*);
-	void checkDeviceDisconnected(uint8_t DeviceID);
+	bool checkDeviceDisconnected(uint8_t DeviceID);
 
 	AMFITRACK();
 	~AMFITRACK();
