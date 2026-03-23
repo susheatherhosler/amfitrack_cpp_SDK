@@ -188,12 +188,13 @@ void AmfitrackNode::setUUID(uint32_t *uuid)
 
 void AmfitrackNode::setNameLength(uint32_t name_length)
 {
+    assert(name_length <= MAX_NAME_LENGTH);
     _name_length = name_length;
 }
 
 void AmfitrackNode::setDevName(const char name[], uint32_t name_length)
 {
-    assert(name_length <= _name_length);
+    assert(name_length <= MAX_NAME_LENGTH);
     strcpy_s(_dev_name, MAX_NAME_LENGTH, name);
 }
 
