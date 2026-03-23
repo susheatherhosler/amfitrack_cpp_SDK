@@ -10,6 +10,8 @@
 
 #ifdef USE_ACTIVE_DEVICE_HANDLING
 
+#define MAX_NAME_LENGTH 53
+
 //-----------------------------------------------------------------------------
 // Functions
 //-----------------------------------------------------------------------------
@@ -20,7 +22,7 @@ AmfitrackNode::AmfitrackNode(uint8_t tx_id, uint32_t *uuid) : _tx_id(tx_id), _na
     _uuid[1] = uuid[1];
     _uuid[2] = uuid[2];
     
-    _dev_name = new char[53];
+    _dev_name = new char[MAX_NAME_LENGTH];
     _dev_name[0] = '\0';
     
     _dev_handle = nullptr;
@@ -28,8 +30,8 @@ AmfitrackNode::AmfitrackNode(uint8_t tx_id, uint32_t *uuid) : _tx_id(tx_id), _na
 
 AmfitrackNode::AmfitrackNode(const char name[]) : _name_length(strlen(name))
 {
-    _dev_name = new char[53];
-    strcpy_s(_dev_name, 53, name);
+    _dev_name = new char[MAX_NAME_LENGTH];
+    strcpy_s(_dev_name, MAX_NAME_LENGTH, name);
     _dev_name[_name_length] = '\0';
     
     _dev_handle = nullptr;
@@ -37,13 +39,13 @@ AmfitrackNode::AmfitrackNode(const char name[]) : _name_length(strlen(name))
 
 AmfitrackNode::AmfitrackNode(hid_device *dev) : _dev_handle(dev), _name_length(AmfiProtMaxPayloadLength - 1)
 {
-    _dev_name = new char[53];
+    _dev_name = new char[MAX_NAME_LENGTH];
     _dev_name[0] = '\0';
 }
 
 AmfitrackNode::AmfitrackNode() : _name_length(AmfiProtMaxPayloadLength - 1)
 {
-    _dev_name = new char[53];
+    _dev_name = new char[MAX_NAME_LENGTH];
     _dev_name[0] = '\0';
     _dev_handle = nullptr;
 }
@@ -52,13 +54,13 @@ AmfitrackNode::AmfitrackNode(const AmfitrackNode& node) : _tx_id(node.getTxID())
                                                         _dev_handle(node.getDeviceHandle()), _is_hub(node.isHub()),
                                                         _is_rf(node.isRF()), _is_usb(node.isUSB())
 {
-    _dev_name = new char[53];
+    _dev_name = new char[MAX_NAME_LENGTH];
     uint32_t *uuid = node.getUUID();
     _uuid[0] = uuid[0];
     _uuid[1] = uuid[1];
     _uuid[2] = uuid[2];
 
-    strcpy_s(_dev_name, 53, node.getDevName());
+    strcpy_s(_dev_name, MAX_NAME_LENGTH, node.getDevName());
     _child_nodes = node.getChildNodes();
 }
 
@@ -76,7 +78,7 @@ AmfitrackNode& AmfitrackNode::operator=(const AmfitrackNode& rhs)
     _uuid[2] = uuid[2];
 
     _name_length = rhs.getNameLength();
-    strcpy_s(_dev_name, 53, rhs.getDevName());
+    strcpy_s(_dev_name, MAX_NAME_LENGTH, rhs.getDevName());
 
     _is_hub = rhs.isHub();
     _is_rf = rhs.isRF();
@@ -192,7 +194,7 @@ void AmfitrackNode::setNameLength(uint32_t name_length)
 void AmfitrackNode::setDevName(const char name[], uint32_t name_length)
 {
     assert(name_length <= _name_length);
-    strcpy_s(_dev_name, 53, name);
+    strcpy_s(_dev_name, MAX_NAME_LENGTH, name);
 }
 
 void AmfitrackNode::setDeviceHandle(hid_device *dev)
