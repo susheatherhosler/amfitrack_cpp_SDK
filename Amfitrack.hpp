@@ -82,6 +82,9 @@ public:
 	/* Get the pose for a specific device */
 	void getDevicePose(uint8_t DeviceID, lib_AmfiProt_Amfitrack_Pose_t* Pose);
 
+	void setDeviceIMU(uint8_t DeviceID, lib_AmfiProt_Amfitrack_IMU_t imuData);
+	void getDeviceIMU(uint8_t DeviceID, lib_AmfiProt_Amfitrack_IMU_t* imuData);
+
 	void setSensorMeasurements(uint8_t DeviceID,lib_AmfiProt_Amfitrack_Sensor_Measurement_t SensorMeasurement);
 
 	void getSensorMeasurements(uint8_t DeviceID,lib_AmfiProt_Amfitrack_Sensor_Measurement_t* SensorMeasurement);
@@ -114,6 +117,12 @@ private:
 	std::mutex mutPosition; // Protects array of position poses
 #endif // USE_THREAD_BASED
 	lib_AmfiProt_Amfitrack_Pose_t Position[MAX_NUMBER_OF_DEVICES];
+
+#ifdef USE_THREAD_BASED
+	std::mutex mutIMU; // Protects array of position poses
+#endif // USE_THREAD_BASED
+	lib_AmfiProt_Amfitrack_IMU_t IMUData[MAX_NUMBER_OF_DEVICES];
+
 
 #ifdef USE_THREAD_BASED
 	std::mutex mutSensorMeasurements; // Protects array of sensor measurement structs
