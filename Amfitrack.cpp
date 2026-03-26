@@ -159,7 +159,10 @@ void AMFITRACK::setConfiguration(uint8_t DeviceID, uint32_t UID, lib_Generic_Par
     amfiprot_api.queue_frame(&ConfigurationPayload, payloadSize, libAmfiProt_PayloadType_Common, lib_AmfiProt_packetType_NoAck, DeviceID);
 }
 
-void AMFITRACK::checkDeviceDisconnected(uint8_t DeviceID)
+// This function checks if the device is disconnected,
+// sets the DeviceActive variable if it has
+// and returns true if it has been disconnected, false if it is still active.
+bool AMFITRACK::checkDeviceDisconnected(uint8_t DeviceID)
 {
 #ifdef USE_ACTIVE_DEVICE_HANDLING
     time_t CurrentTime = time(0);
@@ -168,8 +171,10 @@ void AMFITRACK::checkDeviceDisconnected(uint8_t DeviceID)
     {
         DeviceActive[DeviceID] = false;
         std::cout << "Device " << std::dec << static_cast<unsigned>(DeviceID) << " disconnected" << std::endl;
+        return true;
     }
 #endif
+    return false;
 }
 
 void AMFITRACK::setDeviceActive(uint8_t DeviceID)
