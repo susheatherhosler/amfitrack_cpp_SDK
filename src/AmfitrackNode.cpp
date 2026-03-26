@@ -19,23 +19,23 @@ AmfitrackNode::AmfitrackNode(uint8_t tx_id, uint32_t *uuid) : _tx_id(tx_id), _na
     _uuid[0] = uuid[0];
     _uuid[1] = uuid[1];
     _uuid[2] = uuid[2];
-    
+
     _dev_name = new char[kMaxDevNameSize];
     _dev_name[0] = '\0';
-    
+
     _dev_handle = nullptr;
 }
 
 AmfitrackNode::AmfitrackNode(const char name[]) : _name_length(strlen(name))
 {
     _dev_name = new char[kMaxDevNameSize];
-    strcpy(_dev_name, name);
+    strcpy_s(_dev_name, _name_length, name);
     _dev_name[_name_length] = '\0';
-    
+
     _dev_handle = nullptr;
 }
 
-AmfitrackNode::AmfitrackNode(hid_device *dev) : _dev_handle(dev), _name_length(AmfiProtMaxPayloadLength - 1)
+AmfitrackNode::AmfitrackNode(hid_device *dev) : _dev_handle(dev)
 {
     _dev_name = new char[kMaxDevNameSize];
     _dev_name[0] = '\0';
@@ -48,9 +48,7 @@ AmfitrackNode::AmfitrackNode() : _name_length(AmfiProtMaxPayloadLength - 1)
     _dev_handle = nullptr;
 }
 
-AmfitrackNode::AmfitrackNode(const AmfitrackNode& node) : _tx_id(node.getTxID()), _name_length(node.getNameLength()), 
-                                                        _dev_handle(node.getDeviceHandle()), _is_hub(node.isHub()),
-                                                        _is_rf(node.isRF()), _is_usb(node.isUSB())
+AmfitrackNode::AmfitrackNode(const AmfitrackNode &node) : _tx_id(node.getTxID()), _dev_handle(node.getDeviceHandle())
 {
     _dev_name = new char[kMaxDevNameSize];
     uint32_t *uuid = node.getUUID();
@@ -64,21 +62,24 @@ AmfitrackNode::AmfitrackNode(const AmfitrackNode& node) : _tx_id(node.getTxID())
 
 AmfitrackNode::~AmfitrackNode()
 {
-  delete[] _dev_name;
+    delete[] _dev_name;
 }
 
-AmfitrackNode& AmfitrackNode::operator=(const AmfitrackNode& rhs)
+AmfitrackNode &AmfitrackNode::operator=(const AmfitrackNode &rhs)
 {
 
-    if (this == &rhs) return *this;
+    if (this == &rhs)
+        return *this;
 
     // Handle heap memory ----
-    const char* rhs_dev_name = rhs.getDevName();
+    const char *rhs_dev_name = rhs.getDevName();
     const auto new_name = new char[kMaxDevNameSize];
-    if (rhs_dev_name) {
-      std::snprintf(new_name, kMaxDevNameSize, "%s", rhs_dev_name);
+    if (rhs_dev_name)
+    {
+        std::snprintf(new_name, kMaxDevNameSize, "%s", rhs_dev_name);
     }
-    else {
+    else
+    {
         new_name[0] = '\0';
     }
     delete[] _dev_name;
@@ -103,30 +104,30 @@ AmfitrackNode& AmfitrackNode::operator=(const AmfitrackNode& rhs)
     return *this;
 }
 
-bool operator==(const AmfitrackNode& lhs, const AmfitrackNode& rhs) 
+bool operator==(const AmfitrackNode &lhs, const AmfitrackNode &rhs)
 {
     bool ret;
     uint32_t *lhs_uuid, *rhs_uuid;
     lhs_uuid = lhs.getUUID();
     rhs_uuid = rhs.getUUID();
-    ret = ( (lhs_uuid[0] == rhs_uuid[0]) && (lhs_uuid[1] == rhs_uuid[1]) && (lhs_uuid[2] == rhs_uuid[2]) );
+    ret = ((lhs_uuid[0] == rhs_uuid[0]) && (lhs_uuid[1] == rhs_uuid[1]) && (lhs_uuid[2] == rhs_uuid[2]));
     ret = ret && (lhs.getTxID() == rhs.getTxID());
-    
+
     return ret;
 }
-bool operator!=(const AmfitrackNode& lhs, const AmfitrackNode& rhs)
+bool operator!=(const AmfitrackNode &lhs, const AmfitrackNode &rhs)
 {
     return !(operator==(lhs, rhs));
 }
 
-std::ostream& operator<<(std::ostream& os, const AmfitrackNode& node)
+std::ostream &operator<<(std::ostream &os, const AmfitrackNode &node)
 {
     uint32_t *uuid = node.getUUID();
     os << "TxID: " << (int)node.getTxID() << "\t UUID: " << uuid[0] << uuid[1] << uuid[2] << "\t name: " << node.getDevName();
     return os;
 }
 
-bool AmfitrackNode::contains(const AmfitrackNode& node)
+bool AmfitrackNode::contains(const AmfitrackNode &node)
 {
     bool ret = false;
     if (this->isHub())
@@ -143,7 +144,7 @@ bool AmfitrackNode::contains(const AmfitrackNode& node)
     return ret;
 }
 
-std::shared_ptr<AmfitrackNode> AmfitrackNode::find_match(const AmfitrackNode& node) 
+std::shared_ptr<AmfitrackNode> AmfitrackNode::find_match(const AmfitrackNode &node)
 {
     if (this->isHub())
     {
@@ -163,12 +164,12 @@ uint8_t AmfitrackNode::getTxID() const
     return _tx_id;
 }
 
-uint32_t* AmfitrackNode::getUUID() const
+uint32_t *AmfitrackNode::getUUID() const
 {
     return (uint32_t *)_uuid;
 }
 
-uint32_t AmfitrackNode::getNameLength() const
+size_t AmfitrackNode::getNameLength() const
 {
     return _name_length;
 }
@@ -221,7 +222,6 @@ void AmfitrackNode::addChildNode(std::shared_ptr<AmfitrackNode> node)
 {
     _child_nodes.push_back(node);
 }
-
 
 void AmfitrackNode::setHubMode(bool is_hub)
 {

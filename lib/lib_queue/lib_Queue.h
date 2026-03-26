@@ -59,15 +59,14 @@ size_t libQueue_Remaining(libQueue_Pointer_t *pointer);
 size_t libQueue_Size(libQueue_Pointer_t *pointer);
 size_t libQueue_MaxSize(libQueue_Pointer_t *pointer);
 
-
 //-----------------------------------------------------------------------------
 // Variables and constants
 //-----------------------------------------------------------------------------
 struct libQueue_Pointer
 {
-	size_t head;
-	size_t tail;
-	size_t length;
+    size_t head;
+    size_t tail;
+    size_t length;
 };
 
 #endif

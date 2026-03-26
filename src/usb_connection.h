@@ -53,7 +53,7 @@ typedef struct USB_frame USB_frame_t;
 //-----------------------------------------------------------------------------
 struct USB_frame
 {
-	uint8_t data[USB_REPORT_LENGTH];
+    uint8_t data[USB_REPORT_LENGTH];
 };
 
 using namespace std;
@@ -68,25 +68,25 @@ private:
     uint16_t _pid;
 
     uint8_t _usb_report_id;
-    #ifdef USE_HID
+#ifdef USE_HID
     hid_device *_DeviceHandle = NULL;
-    #else
+#else
     libusb_context *_ctx = NULL;
     libusb_device_handle *_DeviceHandle = NULL;
     libusb_device_descriptor _DeviceDescriptor;
-    #endif
+#endif
 
     std::vector<std::shared_ptr<AmfitrackNode>> _nodes;
 
     time_t CheckForDevice_Timer;
 
 public:
-    usb_connection& operator=(usb_connection const&) = delete;
-    usb_connection(usb_connection const&) = delete;
-    usb_connection& operator=(usb_connection&&) = delete;
-    usb_connection(usb_connection&&) = delete;
+    usb_connection &operator=(usb_connection const &) = delete;
+    usb_connection(usb_connection const &) = delete;
+    usb_connection &operator=(usb_connection &&) = delete;
+    usb_connection(usb_connection &&) = delete;
 
-    static usb_connection& getInstance()
+    static usb_connection &getInstance()
     {
         static usb_connection instance;
         return instance;
@@ -101,7 +101,7 @@ public:
     int set_nonblocking(bool enable);
 
     std::vector<std::shared_ptr<AmfitrackNode>> find_nodes(void);
-    
+
     hid_device *get_device_handle(uint8_t tx_id);
 
     void usb_init(void);
