@@ -58,7 +58,7 @@ AmfitrackNode::AmfitrackNode(const AmfitrackNode& node) : _tx_id(node.getTxID())
     _uuid[1] = uuid[1];
     _uuid[2] = uuid[2];
 
-    strcpy(_dev_name, node.getDevName());
+    strcpy_s(_dev_name, kMaxDevNameSize, node.getDevName());
     _child_nodes = node.getChildNodes();
 }
 
@@ -92,7 +92,7 @@ AmfitrackNode& AmfitrackNode::operator=(const AmfitrackNode& rhs)
     _uuid[2] = uuid[2];
 
     _name_length = rhs.getNameLength();
-    strcpy(_dev_name, rhs.getDevName());
+    strcpy_s(_dev_name, kMaxDevNameSize, rhs.getDevName());
 
     _is_hub = rhs.isHub();
     _is_rf = rhs.isRF();
@@ -202,13 +202,14 @@ void AmfitrackNode::setUUID(uint32_t *uuid)
 
 void AmfitrackNode::setNameLength(uint32_t name_length)
 {
+    assert(name_length <= kMaxDevNameSize);
     _name_length = name_length;
 }
 
 void AmfitrackNode::setDevName(const char name[], uint32_t name_length)
 {
-    assert(name_length <= _name_length);
-    strcpy(_dev_name, name);
+    assert(name_length <= kMaxDevNameSize);
+    strcpy_s(_dev_name, kMaxDevNameSize, name);
 }
 
 void AmfitrackNode::setDeviceHandle(hid_device *dev)
