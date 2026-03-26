@@ -78,3 +78,7 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   # Add G++-specific options here
   target_compile_options(${APP_NAME} PRIVATE -Wall -Wextra -pedantic)
 endif()
+
+add_executable(example example.cpp)
+target_compile_options(example PRIVATE -fsanitize=address -g -fno-omit-frame-pointer)
+target_link_libraries(example PRIVATE ${APP_NAME} -fsanitize=address)

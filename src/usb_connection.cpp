@@ -67,11 +67,20 @@ void libAmfiProt_handle_ReplyDeviceName(void *handle, lib_AmfiProt_Frame_t *fram
 usb_connection::usb_connection()
 {
     this->_usb_report_id = 0x01;
+    int err = 0;
 }
 
 usb_connection::~usb_connection()
 {
     #ifdef USE_HID
+    // shutdown any nodes otherwise we leak memory
+    for (const auto& node : _nodes) {
+       if (hid_device *dev_handle = node->getDeviceHandle()) {
+           hid_close(dev_handle);
+           dev_handle = nullptr;
+       }
+    }
+    _nodes.clear();
     hid_close(_DeviceHandle);
     hid_exit();
     #else
@@ -83,84 +92,81 @@ usb_connection::~usb_connection()
 
 bool usb_connection::usb_connect_device(uint16_t vid, uint16_t pid)
 {
-    int err = 0;
-    #ifdef USE_HID
-    err = hid_init();
-    #else
-    err = libusb_init(&_ctx);
-    #endif
-
-    assert(err == 0);
-
-    #ifdef USE_HID
-    struct hid_device_info *devs = hid_enumerate(vid, pid);
-
-	if (!devs)
-	{
-#ifdef usb_connection_DEBUG_INFO
-		std::cout << "Could not find any devices matching VID: " << std::hex << vid << " and PID: " << std::hex << pid << std::endl;
+  int err = 0;
+#ifdef USE_HID
+  // TODO(pkyle): calling hid_init() over and over again is not ideal, right now its essentially
+  //  called every 2 seconds, if calling amfitrack_main_loop() repeatedly. Additionally your
+  //  assert() is only called when compiled in Debug. This allows initialization to fail in Release.
+  err = hid_init();
+#else
+  err = libusb_init(&_ctx);
 #endif
-	}
-	else
-	{
-		hid_device_info *dev;
-		hid_device* dev_handle;
-        dev = &devs[0];
-		do {
-            bool DeviceAlreadyActive = false;
-			dev_handle = hid_open_path(dev->path);
-            for (auto& node : _nodes)
-            {
-                hid_device_info *dev_handleCurrent = hid_get_device_info(node->getDeviceHandle());
-                int compareResult = wcscmp(dev_handleCurrent->serial_number, dev->serial_number);
-                if (compareResult == 0) 
-                {
-                    DeviceAlreadyActive = true;
-                }
-            }
-			if (!dev_handle)
-			{
-				std::cout << "Unable to open device" << std::endl;
-			}
-			else
-			{
-                if (!DeviceAlreadyActive)
-                {
-                    std::shared_ptr<AmfitrackNode> node(new AmfitrackNode(dev_handle));
-                    _nodes.push_back(node);
-                    //_DeviceHandles.push_back(dev_handle);
-                }
+  assert(err == 0);
 
-			}
-			dev = dev->next;
-		} while (dev);
-	}
-	
-	hid_free_enumeration(devs);
-	if (!(_nodes.size()))
-	{
-		std::cout << "Unable to access any devices with VID: " << std::hex << vid << " and PID: " << std::hex << pid << std::endl;
-	}
-    #else
-    _DeviceHandle = libusb_open_device_with_vid_pid(_ctx, _vid, _pid);
-    
-    if (libusb_kernel_driver_active(_DeviceHandle, 0) == 1)
-    {
-        libusb_detach_kernel_driver(_DeviceHandle, 0);
-    }
-    libusb_claim_interface(_DeviceHandle, 0);
-    #endif
-    return err;
+#ifdef USE_HID
+  struct hid_device_info* devs = hid_enumerate(vid, pid);
+
+  if (!devs) {
+#ifdef usb_connection_DEBUG_INFO
+    std::cout << "Could not find any devices matching VID: " << std::hex << vid
+              << " and PID: " << std::hex << pid << std::endl;
+#endif
+  }
+  else {
+    const hid_device_info* dev = &devs[0];
+    do {
+      bool DeviceAlreadyActive = false;
+      hid_device* dev_handle = hid_open_path(dev->path);
+      for (const auto& node : _nodes) {
+        const hid_device_info* dev_handleCurrent = hid_get_device_info(node->getDeviceHandle());
+        const int compareResult = wcscmp(dev_handleCurrent->serial_number, dev->serial_number);
+        if (compareResult == 0) {
+          DeviceAlreadyActive = true;
+        }
+      }
+      if (!dev_handle) {
+        std::cout << "Unable to open device" << std::endl;
+      }
+      else {
+        if (!DeviceAlreadyActive) {
+          std::shared_ptr<AmfitrackNode> node(new AmfitrackNode(dev_handle));
+          _nodes.push_back(node);
+        }
+        else {
+          // If we're not going to use this object, we have to close it, or we leak memory!
+          hid_close(dev_handle);
+        }
+      }
+      dev = dev->next;
+    } while (dev);
+  }
+
+  hid_free_enumeration(devs);
+  if (!(_nodes.size())) {
+    std::cout << "Unable to access any devices with VID: " << std::hex << vid
+              << " and PID: " << std::hex << pid << std::endl;
+  }
+#else
+  _DeviceHandle = libusb_open_device_with_vid_pid(_ctx, _vid, _pid);
+
+  if (libusb_kernel_driver_active(_DeviceHandle, 0) == 1) {
+    libusb_detach_kernel_driver(_DeviceHandle, 0);
+  }
+  libusb_claim_interface(_DeviceHandle, 0);
+#endif
+  return true;
 }
 
 bool usb_connection::usb_disconnect_device(uint16_t vid, uint16_t pid)
 {
     #ifdef USE_HID
-	for (auto node : _nodes)
-	{
-		hid_close(node->getDeviceHandle());
-	}
-    hid_exit();
+    for (const auto& node : _nodes) {
+       if (hid_device *dev_handle = node->getDeviceHandle()) {
+           hid_close(dev_handle);
+           dev_handle = nullptr;
+       }
+    }
+    _nodes.clear();
     #else
     libusb_release_interface(_DeviceHandle, 0);
     libusb_close(_DeviceHandle);
@@ -400,6 +406,8 @@ void usb_connection::usb_run(void)
 
     if (difftime(CurrentTime, this->CheckForDevice_Timer) >= 2.0)
     {
+        // TODO(pkyle): I think it would be a good idea to consider using an event-based workflow to
+        //  manage usb connections. Right now, every two seconds, this is being run.
         /* Tries to connect to source */
         this->usb_connect_device(VID, PID_Source);
         /* Tries to connect to sensor */
