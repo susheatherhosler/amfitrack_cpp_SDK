@@ -117,6 +117,9 @@ bool usb_connection::usb_connect_device(uint16_t vid, uint16_t pid)
     }
     else
     {
+        // If we message the device within the first 500ms, it can trigger the device to enter bootloader mode.
+		std::this_thread::sleep_for(std::chrono::milliseconds(510));
+
         const hid_device_info *dev = &devs[0];
         do
         {
