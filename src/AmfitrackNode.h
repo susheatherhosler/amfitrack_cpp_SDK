@@ -25,12 +25,13 @@
 class AmfitrackNode
 {
 private:
+    const uint16_t kMaxDevNameSize = 53;
     uint8_t _tx_id;
     uint32_t _uuid[3];
     char *_dev_name;
-    uint32_t _name_length;
+    size_t _name_length;
     hid_device *_dev_handle;
-    
+
     bool _is_hub = false;
     bool _is_usb = false;
     bool _is_rf = false;
@@ -42,21 +43,21 @@ public:
     AmfitrackNode(const char name[]);
     AmfitrackNode(hid_device *dev);
     AmfitrackNode();
-    AmfitrackNode(const AmfitrackNode& node);
+    AmfitrackNode(const AmfitrackNode &node);
     ~AmfitrackNode();
     // Operator Overload
-    AmfitrackNode& operator=(const AmfitrackNode& node);
-    friend bool operator==(const AmfitrackNode& lhs, const AmfitrackNode& rhs);
-    friend bool operator!=(const AmfitrackNode& lhs, const AmfitrackNode& rhs);
-    friend std::ostream& operator<<(std::ostream& os, const AmfitrackNode& node);
-    
-    bool contains(const AmfitrackNode& node);
-    std::shared_ptr<AmfitrackNode> find_match(const AmfitrackNode& node);
+    AmfitrackNode &operator=(const AmfitrackNode &node);
+    friend bool operator==(const AmfitrackNode &lhs, const AmfitrackNode &rhs);
+    friend bool operator!=(const AmfitrackNode &lhs, const AmfitrackNode &rhs);
+    friend std::ostream &operator<<(std::ostream &os, const AmfitrackNode &node);
+
+    bool contains(const AmfitrackNode &node);
+    std::shared_ptr<AmfitrackNode> find_match(const AmfitrackNode &node);
 
     // Accessor Functions
     uint8_t getTxID() const;
     uint32_t *getUUID() const;
-    uint32_t getNameLength() const;
+    size_t getNameLength() const;
     char *getDevName() const;
     hid_device *getDeviceHandle() const;
     std::vector<std::shared_ptr<AmfitrackNode>> getChildNodes() const;
@@ -76,7 +77,6 @@ public:
 
     void setRFMode(bool is_rf);
     bool isRF() const;
-
 };
 #endif
 #endif // AMFITRACKNODES_H_H

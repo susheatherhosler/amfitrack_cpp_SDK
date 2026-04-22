@@ -47,10 +47,8 @@ AmfiProt_API::AmfiProt_API()
 #endif
 }
 
-
 AmfiProt_API::~AmfiProt_API()
 {
-
 }
 
 void AmfiProt_API::isRequestAckSet(uint8_t idx)
@@ -88,7 +86,7 @@ void AmfiProt_API::process_incoming_queue(void)
     }
 }
 
-void AmfiProt_API::clear_isTransmitting(lib_AmfiProt_Frame_t* frame)
+void AmfiProt_API::clear_isTransmitting(lib_AmfiProt_Frame_t *frame)
 {
 #ifdef USB_CONNECTION_DEBUG_INFO
     printf("clear_isTransmitting: frame package number: %u | last package number: %u \n", frame->header.packetNumber, this->_apiHandle->packetNumber[frame->header.source]);
@@ -104,7 +102,7 @@ void AmfiProt_API::clear_isTransmitting(lib_AmfiProt_Frame_t* frame)
     }
 }
 
-bool AmfiProt_API::queue_frame(void const* payload, uint8_t length, uint8_t payloadType, lib_AmfiProt_packetType_t packetType, uint8_t destination)
+bool AmfiProt_API::queue_frame(void const *payload, uint8_t length, uint8_t payloadType, lib_AmfiProt_packetType_t packetType, uint8_t destination)
 {
     static uint8_t packageNumber = 0;
 
@@ -128,7 +126,7 @@ bool AmfiProt_API::queue_frame(void const* payload, uint8_t length, uint8_t payl
 }
 
 #if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
-bool AmfiProt_API::deserialize_frame(void const* pData, uint8_t length, std::chrono::steady_clock::time_point time_stamp)
+bool AmfiProt_API::deserialize_frame(void const *pData, uint8_t length, std::chrono::steady_clock::time_point time_stamp)
 {
     bool isOk = false;
     lib_AmfiProt_Frame_t frame;
@@ -150,7 +148,7 @@ bool AmfiProt_API::deserialize_frame(void const* pData, uint8_t length, std::chr
 }
 #endif
 
-bool AmfiProt_API::deserialize_frame(void const* pData, uint8_t length)
+bool AmfiProt_API::deserialize_frame(void const *pData, uint8_t length)
 {
     bool isOk = false;
     lib_AmfiProt_Frame_t frame;
@@ -220,56 +218,73 @@ void AmfiProt_API::amfiprot_run(void)
 #endif
 }
 
-void AmfiProt_API::libAmfiProt_handle_Ack(void* handle, lib_AmfiProt_Frame_t* frame, void* routing_handle)
+void AmfiProt_API::libAmfiProt_handle_Ack(void *handle, lib_AmfiProt_Frame_t *frame, void *routing_handle)
 {
+    (void)handle;
+    (void)routing_handle;
 #ifdef USB_CONNECTION_DEBUG_INFO
     printf("TxUID: %u | Ack \n", frame->header.source);
 #endif
     this->clear_isTransmitting(frame);
 }
 
-void AmfiProt_API::libAmfiProt_handle_ReplySuccess(void* handle, lib_AmfiProt_Frame_t* frame, void* routing_handle)
+void AmfiProt_API::libAmfiProt_handle_ReplySuccess(void *handle, lib_AmfiProt_Frame_t *frame, void *routing_handle)
 {
+    (void)handle;
+    (void)frame;
+    (void)routing_handle;
 #ifdef USB_CONNECTION_DEBUG_INFO
     printf("TxUID: %u | Success reply\n", frame->header.source);
-#endif  
+#endif
 }
 
-void AmfiProt_API::libAmfiProt_handle_ReplyFailure(void* handle, lib_AmfiProt_Frame_t* frame, void* routing_handle)
+void AmfiProt_API::libAmfiProt_handle_ReplyFailure(void *handle, lib_AmfiProt_Frame_t *frame, void *routing_handle)
 {
+    (void)handle;
+    (void)frame;
+    (void)routing_handle;
 #ifdef USB_CONNECTION_DEBUG_INFO
     printf("TxUID: %u | Failure reply\n", frame->header.source);
 #endif
 }
 
-void AmfiProt_API::libAmfiProt_ReplyInvalid(void* handle, lib_AmfiProt_Frame_t* frame, void* routing_handle)
+void AmfiProt_API::libAmfiProt_ReplyInvalid(void *handle, lib_AmfiProt_Frame_t *frame, void *routing_handle)
 {
+    (void)handle;
+    (void)frame;
+    (void)routing_handle;
 #ifdef USB_CONNECTION_DEBUG_INFO
     printf("TxUID: %u | Invalid reply: %u", frame->header.source, frame->header.payloadType);
 #endif
 }
 
-void AmfiProt_API::libAmfiProt_handle_ReplyNotImplemented(void* handle, lib_AmfiProt_Frame_t* frame, void* routing_handle)
+void AmfiProt_API::libAmfiProt_handle_ReplyNotImplemented(void *handle, lib_AmfiProt_Frame_t *frame, void *routing_handle)
 {
+    (void)handle;
+    (void)frame;
+    (void)routing_handle;
 #ifdef USB_CONNECTION_DEBUG_INFO
     printf("TxUID: %u | Not implemented reply: %u", frame->header.source, frame->header.payloadType);
 #endif
 }
 
-void AmfiProt_API::libAmfiProt_handle_ReplyInvalidRequest(void* handle, lib_AmfiProt_Frame_t* frame, void* routing_handle)
+void AmfiProt_API::libAmfiProt_handle_ReplyInvalidRequest(void *handle, lib_AmfiProt_Frame_t *frame, void *routing_handle)
 {
+    (void)handle;
+    (void)frame;
+    (void)routing_handle;
 #ifdef USB_CONNECTION_DEBUG_INFO
     printf("TxUID: %u | Invalid request: %u", frame->header.source, frame->header.payloadType);
 #endif
 }
 #if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
-void AmfiProt_API::libAmfiProt_handle_AlternativeProcessing(void* handle, lib_AmfiProt_Frame_t* frame, std::chrono::steady_clock::time_point time_stamp, void* routing_handle)
+void AmfiProt_API::libAmfiProt_handle_AlternativeProcessing(void *handle, lib_AmfiProt_Frame_t *frame, std::chrono::steady_clock::time_point time_stamp, void *routing_handle)
 {
     this->lib_AmfiProt_Amfitrack_processFrame(handle, frame, time_stamp, routing_handle);
 }
 #endif
 
-void AmfiProt_API::libAmfiProt_handle_AlternativeProcessing(void* handle, lib_AmfiProt_Frame_t* frame, void* routing_handle)
+void AmfiProt_API::libAmfiProt_handle_AlternativeProcessing(void *handle, lib_AmfiProt_Frame_t *frame, void *routing_handle)
 {
     this->lib_AmfiProt_Amfitrack_processFrame(handle, frame, routing_handle);
 }

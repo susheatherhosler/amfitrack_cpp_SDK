@@ -17,7 +17,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <string.h>		// For memcpy
+#include <string.h> // For memcpy
 /// \endcond
 
 #include "lib_AmfiProt_Amfitrack.hpp"
@@ -44,11 +44,6 @@ static int32_t const INT24_MIN = -8388608;
 //-----------------------------------------------------------------------------
 // Function prototypes
 //-----------------------------------------------------------------------------
-// Remote Procedures
-static lib_AmfiProt_StatusType_t startup_calibrate_rpc(lib_AmfiProt_ProcedureRequest_t* rpc_request, lib_Generic_Parameter_Value_t* return_value);
-static lib_AmfiProt_StatusType_t startup_calibrate_if_not_calibrated_rpc(lib_AmfiProt_ProcedureRequest_t* rpc_request, lib_Generic_Parameter_Value_t* return_value);
-static lib_AmfiProt_StatusType_t enable_phase_modulation_rpc(lib_AmfiProt_ProcedureRequest_t* rpc_request, lib_Generic_Parameter_Value_t* return_value);
-// -----------------
 
 //-----------------------------------------------------------------------------
 // Variables and constants
@@ -59,18 +54,16 @@ static lib_AmfiProt_StatusType_t enable_phase_modulation_rpc(lib_AmfiProt_Proced
 //-----------------------------------------------------------------------------
 lib_AmfiProt_AmfiTrack::lib_AmfiProt_AmfiTrack()
 {
-
 }
 
 lib_AmfiProt_AmfiTrack::~lib_AmfiProt_AmfiTrack()
 {
-
 }
 
 #if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
-void lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_processFrame(void* handle, lib_AmfiProt_Frame_t* frame, std::chrono::steady_clock::time_point time_stamp, void* routing_handle)
+void lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_processFrame(void *handle, lib_AmfiProt_Frame_t *frame, std::chrono::steady_clock::time_point time_stamp, void *routing_handle)
 {
-    //Only partially implemented
+    // Only partially implemented
     switch (frame->header.payloadType)
     {
     case lib_AmfiProt_Amfitrack_PayloadType_Sensor_Measurement:
@@ -85,7 +78,7 @@ void lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_processFrame(void* handle, l
 }
 #endif
 
-void lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_processFrame(void* handle, lib_AmfiProt_Frame_t* frame,void* routing_handle)
+void lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_processFrame(void *handle, lib_AmfiProt_Frame_t *frame, void *routing_handle)
 {
     switch (frame->header.payloadType)
     {
@@ -103,7 +96,6 @@ void lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_processFrame(void* handle, l
         {
             lib_AmfiProt_Amfitrack_handle_SourceMeasurement(handle, frame, routing_handle);
         }
-
     }
     break;
     case lib_AmfiProt_Amfitrack_PayloadType_Sensor_Measurement:
@@ -173,13 +165,12 @@ void lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_processFrame(void* handle, l
     case lib_AmfiProt_Amfitrack_PayloadType_SetPhaseModulation:
         if (frame->header.length == 1)
         {
-            bool enable = frame->payload[0];
             lib_AmfiProt_Amfitrack_handle_SetPhaseModulation(handle, frame, routing_handle);
         }
-        //else
+        // else
         //{
-        //    libAmfiProt_ReplyInvalid(handle, frame, routing_handle);
-        //}
+        //     libAmfiProt_ReplyInvalid(handle, frame, routing_handle);
+        // }
         break;
     case lib_AmfiProt_Amfitrack_PayloadType_SourceCoilCalData:
         if (frame->header.length == sizeof(lib_AmfiProt_Amfitrack_SourceCoilCalData_t))
@@ -196,7 +187,7 @@ void lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_processFrame(void* handle, l
     }
 }
 
-uint32_t lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_decode_frame_id(lib_AmfiProt_Amfitrack_FrameID_24b_t const* frame_id_24b)
+uint32_t lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_decode_frame_id(lib_AmfiProt_Amfitrack_FrameID_24b_t const *frame_id_24b)
 {
     assert(frame_id_24b);
 
@@ -204,7 +195,7 @@ uint32_t lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_decode_frame_id(lib_Amfi
     return retVal;
 }
 
-static void encode_frame_id(lib_AmfiProt_Amfitrack_FrameID_24b_t* frame_id_24b, uint32_t frame_id)
+void encode_frame_id(lib_AmfiProt_Amfitrack_FrameID_24b_t *frame_id_24b, uint32_t frame_id)
 {
     assert(frame_id_24b);
 
@@ -213,7 +204,7 @@ static void encode_frame_id(lib_AmfiProt_Amfitrack_FrameID_24b_t* frame_id_24b, 
     frame_id_24b->value[2] = (uint8_t)((frame_id & 0xFF << 16) >> 16);
 }
 
-static float convert_i24_to_f32(uint8_t const* element_i24, double scaleFactor)
+static float convert_i24_to_f32(uint8_t const *element_i24, double scaleFactor)
 {
     int32_t result_i32;
     double result = 0.0f;
@@ -230,7 +221,7 @@ static float convert_i24_to_f32(uint8_t const* element_i24, double scaleFactor)
     return (float)result;
 }
 
-static int32_t convert_f32_to_i24(float element, uint8_t* element_i24, float scaleFactor)
+static int32_t convert_f32_to_i24(float element, uint8_t *element_i24, float scaleFactor)
 {
     int32_t result = 0;
     double scaledElement = (double)element * scaleFactor;
@@ -258,72 +249,50 @@ static int32_t convert_f32_to_i24(float element, uint8_t* element_i24, float sca
     return result;
 }
 
-static int16_t convert_f32_to_i16(float element, double scaleFactor)
+void lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_decodeIMU_i16(lib_AmfiProt_Amfitrack_IMU_16b_t const *imu_16b, lib_AmfiProt_Amfitrack_IMU_t *imu)
 {
-    int32_t result = 0;
-    double scaledElement = (double)element * scaleFactor;
-
-    if (scaledElement >= INT16_MAX)
-    {
-        result = INT16_MAX;
-    }
-    else if (scaledElement <= INT16_MIN)
-    {
-        result = INT16_MIN;
-    }
-    else
-    {
-        result = (int16_t)scaledElement;
-    }
-
-    return result;
-}
-
-void lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_decodeIMU_i16(lib_AmfiProt_Amfitrack_IMU_16b_t const* imu_16b, lib_AmfiProt_Amfitrack_IMU_t* imu)
-{
-    const float acceleration_scale = 0.1220740f;      // 4000/(2^15-1) : 4000mg full scale range
+    const float acceleration_scale = 0.1220740f; // 4000/(2^15-1) : 4000mg full scale range
     imu->acceleration_x_in_mg = (float)(imu_16b->acceleration_X) * acceleration_scale;
     imu->acceleration_y_in_mg = (float)(imu_16b->acceleration_Y) * acceleration_scale;
     imu->acceleration_z_in_mg = (float)(imu_16b->acceleration_Z) * acceleration_scale;
 
-    const float rotation_scale = 0.0012217f;   // 0.070 * PI/180 : (70mdps/LSB), measured in radians per seconds
+    const float rotation_scale = 0.0012217f; // 0.070 * PI/180 : (70mdps/LSB), measured in radians per seconds
     imu->rotation_x_in_rad_per_sec = (float)(imu_16b->rotation_X) * rotation_scale;
     imu->rotation_y_in_rad_per_sec = (float)(imu_16b->rotation_Y) * rotation_scale;
     imu->rotation_z_in_rad_per_sec = (float)(imu_16b->rotation_Z) * rotation_scale;
 }
 
-
-void lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_encodeIMU_i16(lib_AmfiProt_Amfitrack_IMU_t const* imu, lib_AmfiProt_Amfitrack_IMU_16b_t* imu_16b)
+void lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_encodeIMU_i16(lib_AmfiProt_Amfitrack_IMU_t const *imu, lib_AmfiProt_Amfitrack_IMU_16b_t *imu_16b)
 {
-    const float acceleration_scale = 8.19175f;      // (2^15-1)/4000 : 4000mg full scale range
+    const float acceleration_scale = 8.19175f; // (2^15-1)/4000 : 4000mg full scale range
     imu_16b->acceleration_X = (int16_t)(imu->acceleration_x_in_mg * acceleration_scale);
     imu_16b->acceleration_Y = (int16_t)(imu->acceleration_y_in_mg * acceleration_scale);
     imu_16b->acceleration_Z = (int16_t)(imu->acceleration_z_in_mg * acceleration_scale);
 
 #ifdef SEND_MAGNETO_INSTEAD_OF_GYRO
-    const float rotation_scale = 81.9175f;      // (2^15-1)/400 : 400 uT full scale range
+    const float rotation_scale = 81.9175f; // (2^15-1)/400 : 400 uT full scale range
     imu_16b->rotation_X = (int16_t)(imu->rotation_x_in_rad_per_sec * rotation_scale);
     imu_16b->rotation_Y = (int16_t)(imu->rotation_y_in_rad_per_sec * rotation_scale);
     imu_16b->rotation_Z = (int16_t)(imu->rotation_z_in_rad_per_sec * rotation_scale);
 #else
-    const float rotation_scale = 818.51114f;   // 1/(0.070 * PI/180) : (70mdps/LSB), measured in radians per seconds
+    const float rotation_scale = 818.51114f; // 1/(0.070 * PI/180) : (70mdps/LSB), measured in radians per seconds
     imu_16b->rotation_X = (int16_t)(imu->rotation_x_in_rad_per_sec * rotation_scale);
     imu_16b->rotation_Y = (int16_t)(imu->rotation_y_in_rad_per_sec * rotation_scale);
     imu_16b->rotation_Z = (int16_t)(imu->rotation_z_in_rad_per_sec * rotation_scale);
 #endif
 }
 
-void lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_decode_magneto_i16(lib_AmfiProt_Amfitrack_magneto_16b_t const* mag_16b, lib_AmfiProt_Amfitrack_magneto_t* mag)
+void lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_decode_magneto_i16(lib_AmfiProt_Amfitrack_magneto_16b_t const *mag_16b, lib_AmfiProt_Amfitrack_magneto_t *mag)
 {
-    const float mag_scale = 0.01220740f;      // 400/(2^15-1) : 400 uT full scale range
+    const float mag_scale = 0.01220740f; // 400/(2^15-1) : 400 uT full scale range
     mag->magneto_X_in_uT = (float)(mag_16b->magneto_X) * mag_scale;
     mag->magneto_Y_in_uT = (float)(mag_16b->magneto_Y) * mag_scale;
     mag->magneto_Z_in_uT = (float)(mag_16b->magneto_Z) * mag_scale;
 }
 
-void lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_encode_magneto_i16(lib_AmfiProt_Amfitrack_magneto_t const* magneto, lib_AmfiProt_Amfitrack_magneto_16b_t* magneto_16b)
+void lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_encode_magneto_i16(lib_AmfiProt_Amfitrack_magneto_t const *magneto, lib_AmfiProt_Amfitrack_magneto_16b_t *magneto_16b)
 {
-    const float magneto_scale = 81.9175f;      // (2^15-1)/400 : 400 uT full scale range
+    const float magneto_scale = 81.9175f; // (2^15-1)/400 : 400 uT full scale range
     magneto_16b->magneto_X = (int16_t)(magneto->magneto_X_in_uT * magneto_scale);
     magneto_16b->magneto_Y = (int16_t)(magneto->magneto_Y_in_uT * magneto_scale);
     magneto_16b->magneto_Z = (int16_t)(magneto->magneto_Z_in_uT * magneto_scale);
@@ -359,8 +328,7 @@ uint8_t lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_encode_temperature_u8(flo
     return temperature_u8;
 }
 
-
-void lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_decode_pose_i24(lib_AmfiProt_Amfitrack_Pose_24b_t const* pose_24b, lib_AmfiProt_Amfitrack_Pose_t* pose)
+void lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_decode_pose_i24(lib_AmfiProt_Amfitrack_Pose_24b_t const *pose_24b, lib_AmfiProt_Amfitrack_Pose_t *pose)
 {
     const double position_scale = 0.00001;
     pose->position_x_in_m = convert_i24_to_f32(pose_24b->position_x, position_scale);
@@ -374,7 +342,7 @@ void lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_decode_pose_i24(lib_AmfiProt
     pose->orientation_w = convert_i24_to_f32(pose_24b->orientation_w, orientation_scale);
 }
 
-void lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_encode_pose_i24(lib_AmfiProt_Amfitrack_Pose_t const* pose, lib_AmfiProt_Amfitrack_Pose_24b_t* pose_24b)
+void lib_AmfiProt_AmfiTrack::lib_AmfiProt_Amfitrack_encode_pose_i24(lib_AmfiProt_Amfitrack_Pose_t const *pose, lib_AmfiProt_Amfitrack_Pose_24b_t *pose_24b)
 {
     const double position_scale = 100000.0;
     convert_f32_to_i24(pose->position_x_in_m, pose_24b->position_x, position_scale);

@@ -42,48 +42,48 @@
 //-----------------------------------------------------------------------------
 void libQueue_Init(libQueue_Pointer_t *pointer, size_t buffer_length)
 {
-	pointer->head = pointer->tail = 0;
-	pointer->length = buffer_length;
+    pointer->head = pointer->tail = 0;
+    pointer->length = buffer_length;
 }
 
 bool libQueue_Full(libQueue_Pointer_t *pointer)
 {
     assert(pointer->length > 0);
 
-	bool retVal = false;
+    bool retVal = false;
 
-	if ((pointer->head + 1) % pointer->length == pointer->tail)
-	{
-		retVal = true;
-	}
+    if ((pointer->head + 1) % pointer->length == pointer->tail)
+    {
+        retVal = true;
+    }
 
-	return retVal;
+    return retVal;
 }
 
 bool libQueue_Empty(libQueue_Pointer_t *pointer)
 {
-	bool retVal = false;
+    bool retVal = false;
 
-	if (pointer->tail == pointer->head)
-	{
-		retVal = true;
-	}
+    if (pointer->tail == pointer->head)
+    {
+        retVal = true;
+    }
 
-	return retVal;
+    return retVal;
 }
 
 size_t libQueue_Read(libQueue_Pointer_t *pointer)
 {
-	assert(!libQueue_Empty(pointer));
-	
-	return pointer->tail;
+    assert(!libQueue_Empty(pointer));
+
+    return pointer->tail;
 }
 
 size_t libQueue_Write(libQueue_Pointer_t *pointer)
 {
-	assert(!libQueue_Full(pointer));
-	
-	return pointer->head;
+    assert(!libQueue_Full(pointer));
+
+    return pointer->head;
 }
 
 void libQueue_Add(libQueue_Pointer_t *pointer)
@@ -92,7 +92,7 @@ void libQueue_Add(libQueue_Pointer_t *pointer)
 
     assert(!libQueue_Full(pointer));
 
-	pointer->head = (pointer->head + 1) % pointer->length;
+    pointer->head = (pointer->head + 1) % pointer->length;
 }
 
 void libQueue_Remove(libQueue_Pointer_t *pointer)
@@ -101,7 +101,7 @@ void libQueue_Remove(libQueue_Pointer_t *pointer)
 
     assert(!libQueue_Empty(pointer));
 
-	pointer->tail = (pointer->tail + 1) % pointer->length;
+    pointer->tail = (pointer->tail + 1) % pointer->length;
 }
 
 void libQueue_Clear(libQueue_Pointer_t *pointer)
@@ -125,4 +125,3 @@ size_t libQueue_MaxSize(libQueue_Pointer_t *pointer)
 
     return pointer->length - 1;
 }
-

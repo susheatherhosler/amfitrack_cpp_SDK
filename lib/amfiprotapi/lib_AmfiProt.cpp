@@ -17,7 +17,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <string.h>	// For memcpy
+#include <string.h> // For memcpy
 /// \endcond
 
 #include "lib_AmfiProt.hpp"
@@ -32,12 +32,10 @@ extern "C"
 }
 #endif
 
-
-
 //-----------------------------------------------------------------------------
 // Defines
 //-----------------------------------------------------------------------------
-//#define USE_AMFIPROT_LEGACY_TYPES
+// #define USE_AMFIPROT_LEGACY_TYPES
 //-----------------------------------------------------------------------------
 // Type declarations
 //-----------------------------------------------------------------------------
@@ -45,7 +43,6 @@ extern "C"
 //-----------------------------------------------------------------------------
 // Function prototypes
 //-----------------------------------------------------------------------------
-
 
 //-----------------------------------------------------------------------------
 // Variables and constants
@@ -56,17 +53,13 @@ extern "C"
 //-----------------------------------------------------------------------------
 lib_AmfiProt::lib_AmfiProt()
 {
-
 }
 
 lib_AmfiProt::~lib_AmfiProt()
 {
-
 }
 
-
-
-bool lib_AmfiProt::lib_AmfiProt_UpdateCRC(lib_AmfiProt_Frame_t* frame)
+bool lib_AmfiProt::lib_AmfiProt_UpdateCRC(lib_AmfiProt_Frame_t *frame)
 {
     assert(frame);
 
@@ -86,8 +79,7 @@ bool lib_AmfiProt::lib_AmfiProt_UpdateCRC(lib_AmfiProt_Frame_t* frame)
     return retVal;
 }
 
-
-bool lib_AmfiProt::lib_AmfiProt_EncodeFrame(lib_AmfiProt_Frame_t* frame, void const* pPayload, uint8_t length, uint8_t payloadType, uint8_t packetNumber, uint8_t destination, lib_AmfiProt_packetType_t packetType)
+bool lib_AmfiProt::lib_AmfiProt_EncodeFrame(lib_AmfiProt_Frame_t *frame, void const *pPayload, uint8_t length, uint8_t payloadType, uint8_t packetNumber, uint8_t destination, lib_AmfiProt_packetType_t packetType)
 {
     assert(frame);
 
@@ -116,7 +108,7 @@ bool lib_AmfiProt::lib_AmfiProt_EncodeFrame(lib_AmfiProt_Frame_t* frame, void co
     return retVal;
 }
 
-bool lib_AmfiProt::lib_AmfiProt_EncodeAck(lib_AmfiProt_Frame_t* incomingFrame, lib_AmfiProt_Frame_t* outgoingFrame)
+bool lib_AmfiProt::lib_AmfiProt_EncodeAck(lib_AmfiProt_Frame_t *incomingFrame, lib_AmfiProt_Frame_t *outgoingFrame)
 {
     assert(incomingFrame);
     assert(outgoingFrame);
@@ -135,14 +127,14 @@ bool lib_AmfiProt::lib_AmfiProt_EncodeAck(lib_AmfiProt_Frame_t* incomingFrame, l
     return retVal;
 }
 
-bool lib_AmfiProt::lib_AmfiProt_DeserializeFrame(lib_AmfiProt_Frame_t* frame, void const* pData, uint8_t length)
+bool lib_AmfiProt::lib_AmfiProt_DeserializeFrame(lib_AmfiProt_Frame_t *frame, void const *pData, uint8_t length)
 {
     assert(frame);
     assert(pData);
 
     bool retVal = false;
 
-    if (length >= sizeof(frame->header))	// OK, we have received at least a complete header
+    if (length >= sizeof(frame->header)) // OK, we have received at least a complete header
     {
         if (length > sizeof(*frame))
         {
@@ -180,19 +172,19 @@ bool lib_AmfiProt::lib_AmfiProt_DeserializeFrame(lib_AmfiProt_Frame_t* frame, vo
     if (!retVal)
     {
         printf("Deserialization failed!");
-        memset(frame, 0, sizeof(*frame));	// Clear frame if it was not decoded correctly
+        memset(frame, 0, sizeof(*frame)); // Clear frame if it was not decoded correctly
     }
 
     return retVal;
 }
 
-uint8_t lib_AmfiProt::lib_AmfiProt_FrameSize(lib_AmfiProt_Frame_t const* frame)
+uint8_t lib_AmfiProt::lib_AmfiProt_FrameSize(lib_AmfiProt_Frame_t const *frame)
 {
     assert(frame);
 
     uint8_t frameSize;
 
-    if (frame->header.length == 0)		// Don't include payload CRC for empty payloads
+    if (frame->header.length == 0) // Don't include payload CRC for empty payloads
     {
         frameSize = sizeof(frame->header);
     }
@@ -209,7 +201,7 @@ void lib_AmfiProt::lib_AmfiProt_SetDeviceID(uint8_t deviceID)
     this->deviceID = deviceID;
 }
 
-bool lib_AmfiProt::lib_AmfiProt_Init(lib_AmfiProt_Handle_t* handle, uint8_t deviceID)
+bool lib_AmfiProt::lib_AmfiProt_Init(lib_AmfiProt_Handle_t *handle, uint8_t deviceID)
 {
     assert(handle);
 
@@ -218,7 +210,7 @@ bool lib_AmfiProt::lib_AmfiProt_Init(lib_AmfiProt_Handle_t* handle, uint8_t devi
     return true;
 }
 
-void lib_AmfiProt::lib_AmfiProt_ProcessFrame(void* handle, lib_AmfiProt_Frame_t* frame, void* routing_handle)
+void lib_AmfiProt::lib_AmfiProt_ProcessFrame(void *handle, lib_AmfiProt_Frame_t *frame, void *routing_handle)
 {
     uint8_t controlBits = (frame->header.packetType & lib_AmfiProt_packetType_Mask);
     if (controlBits == lib_AmfiProt_packetType_Ack)
@@ -229,7 +221,7 @@ void lib_AmfiProt::lib_AmfiProt_ProcessFrame(void* handle, lib_AmfiProt_Frame_t*
     {
         if (frame->header.payloadType == libAmfiProt_PayloadType_Common)
         {
-            if (frame->header.length > 0)	// There are no valid frames with payloadType = libAmfiProt_PayloadType_Common, and length = 0
+            if (frame->header.length > 0) // There are no valid frames with payloadType = libAmfiProt_PayloadType_Common, and length = 0
             {
                 switch (frame->payload[0])
                 {
@@ -668,7 +660,7 @@ void lib_AmfiProt::lib_AmfiProt_ProcessFrame(void* handle, lib_AmfiProt_Frame_t*
                         rxPayload.parameter3.type = lib_Generic_Parameter_Type_void;
                         rxPayload.parameter4.type = lib_Generic_Parameter_Type_void;
                         rxPayload.parameter5.type = lib_Generic_Parameter_Type_void;
-                        
+
                         memcpy(&rxPayload, frame->payload, frame->header.length);
 
                         this->libAmfiProt_handle_RequestProcedureCall(handle, frame, routing_handle);
@@ -740,9 +732,9 @@ void lib_AmfiProt::lib_AmfiProt_ProcessFrame(void* handle, lib_AmfiProt_Frame_t*
 #if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
 #include <iostream>
 #include <chrono>
-void lib_AmfiProt::lib_AmfiProt_ProcessFrame(void* handle, lib_AmfiProt_Frame_t* frame, std::chrono::steady_clock::time_point time_stamp, void* routing_handle)
+void lib_AmfiProt::lib_AmfiProt_ProcessFrame(void *handle, lib_AmfiProt_Frame_t *frame, std::chrono::steady_clock::time_point time_stamp, void *routing_handle)
 {
-    //ONLY partiacially implemented
+    // ONLY partiacially implemented
     this->libAmfiProt_handle_AlternativeProcessing(handle, frame, time_stamp, routing_handle);
 }
 #endif
