@@ -25,6 +25,7 @@
 // Section: Typedef
 //-----------------------------------------------------------------------------
 struct ButtonCallback {
+	ButtonCallback() { instance = nullptr; function = nullptr; };
 	void* instance;
 	void (*function)(void*, bool);
 };
