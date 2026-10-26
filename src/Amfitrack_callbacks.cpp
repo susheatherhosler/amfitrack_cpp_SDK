@@ -149,8 +149,6 @@ void AmfiProt_API::lib_AmfiProt_Amfitrack_handle_SensorMeasurement(void *handle,
 	AMFITRACK_Devices::getInstance().set(_deviceID, extInput);
 
 	bool buttonDown = (SensorMeasurement.gpio_state & (1 << 0)) != 0;
-	AMFITRACK_Sensor sensor;
-	AMFITRACK_Devices::getInstance().get_sensor_by_id(_deviceID, &sensor);
 
 	if (sensor.buttonDown != buttonDown && sensor.callback != nullptr && sensor.callback->function != nullptr)
 	{
