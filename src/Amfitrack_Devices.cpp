@@ -755,7 +755,7 @@ bool AMFITRACK_Devices::set(uint8_t device_id, Raw_with_Phase_B_Field_t const &r
 
 bool AMFITRACK_Devices::set_only_listen_source(uint8_t source_id)
 {
-	if (!is_valid_device_id(source_id))
+	if (!is_valid_device_id(source_id) && source_id != AMFITRACK_BROADCAST_DEVICE_ID)
 	{
 		return false;
 	}
